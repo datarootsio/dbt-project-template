@@ -1,0 +1,36 @@
+name: "dbt_project_template"
+version: "1.0.0"
+config-version: 2
+
+profile: "default"
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+snapshot-paths: ["snapshots"]
+analysis-paths: ["analyses"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+  - "logs"
+
+models:
+  dbt_project_template:
+    +persist_docs:
+      relation: true
+      columns: true
+
+    staging:
+      +materialized: view
+      +tags: ["staging"]
+
+    intermediate:
+      +materialized: view
+      +tags: ["intermediate"]
+
+    marts:
+      +materialized: table
+      +tags: ["marts"]

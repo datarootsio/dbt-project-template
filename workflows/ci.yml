@@ -1,0 +1,29 @@
+name: template-ci
+
+on:
+  pull_request:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  parse:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Pull runtime image
+        run: |
+          docker pull "ghcr.io/datarootsio/dbt-runtime-snowflake:1.8.0"
+
+      - name: dbt deps
+        run: |
+          docker run --rm             -v "${PWD}:/app"             -e DBT_ADAPTER=snowflake             -e DBT_TARGET=dev             -e DBT_PROFILES_DIR=/profiles             -e DBT_RENDER_PROFILES=1             -e SNOWFLAKE_ACCOUNT=dummy             -e SNOWFLAKE_USER=dummy             -e SNOWFLAKE_PASSWORD=dummy             -e SNOWFLAKE_ROLE=dummy             -e SNOWFLAKE_DATABASE=dummy             -e SNOWFLAKE_WAREHOUSE=dummy             -e SNOWFLAKE_SCHEMA=dummy             "ghcr.io/datarootsio/dbt-runtime-snowflake:1.8.0" deps
+
+      - name: dbt parse
+        run: |
+          docker run --rm             -v "${PWD}:/app"             -e DBT_ADAPTER=snowflake             -e DBT_TARGET=dev             -e DBT_PROFILES_DIR=/profiles             -e DBT_RENDER_PROFILES=1             -e SNOWFLAKE_ACCOUNT=dummy             -e SNOWFLAKE_USER=dummy             -e SNOWFLAKE_PASSWORD=dummy             -e SNOWFLAKE_ROLE=dummy             -e SNOWFLAKE_DATABASE=dummy             -e SNOWFLAKE_WAREHOUSE=dummy             -e SNOWFLAKE_SCHEMA=dummy             "ghcr.io/datarootsio/dbt-runtime-snowflake:1.8.0" parse

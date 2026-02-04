@@ -1,0 +1,7 @@
+target/
+dbt_packages/
+logs/
+.dbt/
+.DS_Store
+.idea/
+.vscode/
