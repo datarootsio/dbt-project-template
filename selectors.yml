@@ -1,18 +1,5 @@
 selectors:
   - name: daily
-    description: "Daily pipeline models (tagged daily)"
     definition:
       method: tag
       value: daily
-
-  - name: staging
-    description: "All staging models"
-    definition:
-      method: path
-      value: models/staging
-
-  - name: marts
-    description: "All marts models"
-    definition:
-      method: path
-      value: models/marts
