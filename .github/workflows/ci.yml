@@ -3,24 +3,77 @@ name: template-ci
 on:
   pull_request:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  ORG: datarootsio
+  DBT_VERSION: "1.8.0"
 
 jobs:
   parse:
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        adapter: [snowflake, fabric]
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare profiles.yml (from adapter pack)
+        shell: bash
+        run: |
+          set -euo pipefail
+          ADAPTER="${{ matrix.adapter }}"
+          mkdir -p "$RUNNER_TEMP/profiles"
+
+          if [[ ! -f "adapters/${ADAPTER}/profiles.yml.example" ]]; then
+            echo "ERROR: adapters/${ADAPTER}/profiles.yml.example not found" >&2
+            echo "Add it so CI can run dbt parse for ${ADAPTER}." >&2
+            exit 1
+          fi
+
+          cp "adapters/${ADAPTER}/profiles.yml.example" "$RUNNER_TEMP/profiles/profiles.yml"
 
       - name: Pull runtime image
-        run: docker pull ghcr.io/datarootsio/dbt-runtime-snowflake:1.8.0
-
-      - name: dbt parse
+        shell: bash
         run: |
-          docker run --rm -v "${PWD}:/app" \
-            -e DBT_ADAPTER=snowflake \
+          set -euo pipefail
+          ADAPTER="${{ matrix.adapter }}"
+          IMAGE="ghcr.io/${ORG}/dbt-runtime-${ADAPTER}:${DBT_VERSION}"
+          docker pull "${IMAGE}"
+
+      - name: dbt deps + parse (container)
+        shell: bash
+        run: |
+          set -euo pipefail
+          ADAPTER="${{ matrix.adapter }}"
+          IMAGE="ghcr.io/${ORG}/dbt-runtime-${ADAPTER}:${DBT_VERSION}"
+
+          # Generic dummy vars (profiles.yml should use env_var() names)
+          # Add adapter-specific vars if your profiles require them.
+          docker run --rm \
+            -v "${PWD}:/app" \
+            -v "$RUNNER_TEMP/profiles:/profiles" \
+            -w /app \
             -e DBT_TARGET=dev \
             -e DBT_PROFILES_DIR=/profiles \
-            -e DBT_RENDER_PROFILES=1 \
+            -e DBT_RENDER_PROFILES=0 \
+            -e DBT_THREADS=4 \
+            \
             -e SNOWFLAKE_ACCOUNT=dummy \
             -e SNOWFLAKE_USER=dummy \
             -e SNOWFLAKE_PASSWORD=dummy \
@@ -28,4 +81,34 @@ jobs:
             -e SNOWFLAKE_DATABASE=dummy \
             -e SNOWFLAKE_WAREHOUSE=dummy \
             -e SNOWFLAKE_SCHEMA=dummy \
-            ghcr.io/datarootsio/dbt-runtime-snowflake:1.8.0 parse
+            \
+            -e FABRIC_SERVER=dummy \
+            -e FABRIC_DATABASE=dummy \
+            -e FABRIC_SCHEMA=dummy \
+            -e FABRIC_AUTH=dummy \
+            \
+            "${IMAGE}" deps
+
+          docker run --rm \
+            -v "${PWD}:/app" \
+            -v "$RUNNER_TEMP/profiles:/profiles" \
+            -w /app \
+            -e DBT_TARGET=dev \
+            -e DBT_PROFILES_DIR=/profiles \
+            -e DBT_RENDER_PROFILES=0 \
+            -e DBT_THREADS=4 \
+            \
+            -e SNOWFLAKE_ACCOUNT=dummy \
+            -e SNOWFLAKE_USER=dummy \
+            -e SNOWFLAKE_PASSWORD=dummy \
+            -e SNOWFLAKE_ROLE=dummy \
+            -e SNOWFLAKE_DATABASE=dummy \
+            -e SNOWFLAKE_WAREHOUSE=dummy \
+            -e SNOWFLAKE_SCHEMA=dummy \
+            \
+            -e FABRIC_SERVER=dummy \
+            -e FABRIC_DATABASE=dummy \
+            -e FABRIC_SCHEMA=dummy \
+            -e FABRIC_AUTH=dummy \
+            \
+            "${IMAGE}" parse
