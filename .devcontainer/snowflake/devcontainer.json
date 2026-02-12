@@ -1,0 +1,25 @@
+{
+  "name": "dbt-template (snowflake)",
+  "image": "ghcr.io/datarootsio/dbt-runtime-snowflake:1.8.0",
+  "remoteUser": "dbtuser",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "containerEnv": {
+    "ADAPTER": "snowflake",
+    "DBT_TARGET": "dev",
+    "DBT_PROFILES_DIR": "/profiles",
+    "RUN_DBT_DEPS": "1",
+    "RUN_DBT_PARSE": "1"
+  },
+  "postCreateCommand": "bash .devcontainer/postCreate.sh",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      },
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "innoverio.vscode-dbt-power-user"
+      ]
+    }
+  }
+}

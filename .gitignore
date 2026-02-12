@@ -1,4 +1,8 @@
-
-target/
+# dbt artifacts
 dbt_packages/
 logs/
+target/
+package-lock.yml
+
+# local secrets
+adapters/*/.env

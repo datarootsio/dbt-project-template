@@ -1,100 +1,65 @@
-# Usage — dbt project template (containerized)
+# Usage — dbt Project Template
 
-This project runs dbt **inside a container image** (runtime image). You do **not** install dbt locally.
+This project runs dbt inside a **VS Code Dev Container** using a pre-built runtime image.
+
+# Recommended Workflow (Dev Containers)
 
 ## Prerequisites
-- Docker installed and running
-- Access to GHCR images : `docker login ghcr.io`
 
-## Concepts
-- **Adapter**: snowflake / fabric / … (select with `ADAPTER=<name>`)
-- **Runtime image**: `ghcr.io/<ORG>/dbt-runtime-<adapter>:<DBT_VERSION>`
-- **Local env file**: `adapters/<adapter>/.env` (created from `env.example`)
-- **Profiles rendering**: runtime image renders `profiles.yml` at runtime using env vars
+* VS Code
+* Dev Containers extension installed
+* Docker running
+* Access to GHCR images (`docker login ghcr.io` if required)
 
 
+## Open in Dev Container
 
-## 1) First-time local setup (example: Snowflake)
+1. Open this repository in VS Code.
+2. Press **Cmd/Ctrl + Shift + P**.
+3. Select:
 
-From the dbt project folder:
-
-```bash
-cp adapters/snowflake/env.example adapters/snowflake/.env
-# edit adapters/snowflake/.env
+```
+Dev Containers: Reopen in Container
 ```
 
-Pull the runtime image:
+Because multiple adapter configurations exist, VS Code will prompt you to choose one:
+
+* `snowflake`
+* `fabric`
+
+Select the adapter you want to use.
+
+
+## What Happens Automatically
+
+When the container starts:
+
+* The correct runtime image is used:
+  `ghcr.io/datarootsio/dbt-runtime-<adapter>:<version>`
+* `adapters/<adapter>/.env` is created from `env.example` (if missing)
+* `profiles.yml` is generated into `/profiles`
+* `dbt deps` runs automatically
+* `dbt parse` runs automatically
+
+Your environment is now ready.
+
+## Daily Usage
+
+Inside the container terminal:
 
 ```bash
-make pull ADAPTER=snowflake
+dbt deps
+dbt parse
+dbt build --selector daily --target dev
+dbt test
 ```
 
-Install dbt packages:
+# Configure Credentials
 
-```bash
-make deps ADAPTER=snowflake
+Edit the generated file:
+
+```
+adapters/<adapter>/.env
 ```
 
-Validate project compilation (no database required for parse):
-
-```bash
-make parse ADAPTER=snowflake
-```
-
-
-
-## 2) Run common workflows
-
-### Build a selection (recommended)
-Use selectors to standardize orchestration:
-
-```bash
-make build ADAPTER=snowflake SELECTOR=daily TARGET=dev
-make build ADAPTER=snowflake SELECTOR=staging TARGET=dev
-make build ADAPTER=snowflake SELECTOR=marts TARGET=dev
-```
-
-### Run tests
-```bash
-make test ADAPTER=snowflake TARGET=dev
-```
-
-### Clean artifacts
-```bash
-make clean
-```
-
-
-
-## 3) Power mode — run any dbt command
-
-Use `make dbt` when you need a custom dbt command:
-
-```bash
-make dbt ADAPTER=snowflake CMD="run -s tag:daily --target dev"
-make dbt ADAPTER=snowflake CMD="build --selector daily --full-refresh --target prod"
-make dbt ADAPTER=snowflake CMD="docs generate"
-make dbt ADAPTER=snowflake CMD="ls -s models/staging"
-```
-
-
-
-## 4) Debug mode — open a shell in the runtime image
-
-```bash
-make shell ADAPTER=snowflake
-```
-
-Inside the container, your project is at `/app`.
-
-
-
-## 5) CI behavior (what it validates)
-Typical CI checks:
-- `dbt deps`
-- `dbt parse`
-
-These verify:
-- project structure is valid
-- dependencies resolve
-- compilation succeeds
+Fill in your database credentials before running `dbt build` or `dbt test`.
