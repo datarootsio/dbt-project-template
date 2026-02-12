@@ -1,0 +1,22 @@
+{
+  "files.exclude": {
+    "**/target": true,
+    "**/dbt_packages": true,
+    "**/logs": true,
+    "**/.pytest_cache": true,
+    "**/__pycache__": true
+  },
+  "search.exclude": {
+    "**/target": true,
+    "**/dbt_packages": true,
+    "**/logs": true
+  },
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[yaml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}

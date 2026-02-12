@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "ms-vscode-remote.remote-containers",
+    "ms-azuretools.vscode-docker",
+    "innoverio.vscode-dbt-power-user",
+    "esbenp.prettier-vscode"
+  ]
+}
