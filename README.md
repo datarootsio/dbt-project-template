@@ -26,11 +26,16 @@ Because multiple adapter configurations exist, VS Code will prompt you to choose
 
 * `snowflake`
 * `fabric`
+* `databricks`
+* `bigquery`
+* `postgres`
 
 Select the adapter you want to use.
 
 
 ## What Happens Automatically
+
+> Note: the Dev Container exports both `ADAPTER` and `DBT_ADAPTER` (same value) for compatibility with dbt-runtime images.
 
 When the container starts:
 

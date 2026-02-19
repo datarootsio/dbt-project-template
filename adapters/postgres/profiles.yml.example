@@ -1,0 +1,23 @@
+dbt_project:
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('PG_HOST') }}"
+      port: "{{ env_var('PG_PORT', '5432') | int }}"
+      dbname: "{{ env_var('PG_DATABASE') }}"
+      schema: "{{ env_var('PG_SCHEMA', 'public') }}"
+      user: "{{ env_var('PG_USER') }}"
+      threads: "{{ env_var('DBT_THREADS', '4') | int }}"
+
+      # Auth method selector (no Jinja blocks allowed in profiles.yml)
+      # - password (default)
+      # - iam      (token passed via PG_PASSWORD)
+      auth_method: "{{ env_var('PG_AUTH_METHOD', 'password') }}"
+      password: "{{ env_var('PG_PASSWORD', '') }}"
+
+      # TLS options (optional)
+      sslmode: "{{ env_var('PG_SSLMODE', 'prefer') }}"
+      sslcert: "{{ env_var('PG_SSL_CERT', '') }}"
+      sslkey: "{{ env_var('PG_SSL_KEY', '') }}"
+      sslrootcert: "{{ env_var('PG_SSL_ROOT_CERT', '') }}"

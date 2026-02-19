@@ -2,6 +2,8 @@
 
 This template supports multiple adapters via Dev Containers.
 
+The Dev Container exports both `ADAPTER` and `DBT_ADAPTER` (same value) so you can use either convention in runtime scripts.
+
 Each adapter integration requires three components:
 
 1. Adapter pack (`adapters/<adapter>/`)
