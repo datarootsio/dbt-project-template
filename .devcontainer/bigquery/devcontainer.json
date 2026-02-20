@@ -8,7 +8,10 @@
     "DBT_TARGET": "dev",
     "DBT_PROFILES_DIR": "/profiles",
     "RUN_DBT_DEPS": "1",
-    "RUN_DBT_PARSE": "0"
+    "RUN_DBT_PARSE": "0",
+    "DBT_PROFILE": "dbt_project_template",
+    "DBT_PROJECT_DIR": "/workspaces/${localWorkspaceFolderBasename}",
+    "ORCHESTRATOR": "none"
   },
   "postCreateCommand": "bash .devcontainer/postCreate.sh",
   "customizations": {
