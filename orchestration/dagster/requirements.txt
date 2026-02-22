@@ -1,3 +1,0 @@
-dagster==1.7.16
-dagster-webserver==1.7.16
-dagster-dbt==0.23.16

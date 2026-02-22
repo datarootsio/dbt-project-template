@@ -1,2 +1,0 @@
-apache-airflow==2.9.3
-pendulum>=3.0.0
