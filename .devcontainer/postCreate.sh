@@ -45,8 +45,6 @@ if [[ -f "${ENV_EXAMPLE}" && ! -f "${ENV_FILE}" ]]; then
   log "Creating local env file: ${ENV_FILE}"
   cp "${ENV_EXAMPLE}" "${ENV_FILE}"
   warn "Edit ${ENV_FILE} with real credentials before running dbt build/test."
-elif [[ ! -f "${ENV_EXAMPLE}" ]]; then
-  warn "Missing ${ENV_EXAMPLE} (cannot scaffold .env)."
 fi
 
 log "Ensuring DBT profiles dir exists: ${DBT_PROFILES_DIR}"
@@ -68,8 +66,6 @@ if [[ -f "${PROFILES_EXAMPLE}" ]]; then
     cp "${PROFILES_FILE}" "${PROFILES_FILE}.${ts}.bak"
   fi
   cp "${PROFILES_EXAMPLE}" "${PROFILES_FILE}"
-else
-  warn "No profiles.yml.example found at ${PROFILES_EXAMPLE}. Skipping profiles install."
 fi
 
 export ADAPTER DBT_TARGET DBT_PROFILE DBT_PROFILES_DIR
@@ -77,9 +73,18 @@ export DBT_ADAPTER="${ADAPTER}"
 export DBT_PROJECT_DIR="${WORKSPACE_ROOT}"
 
 if [[ -f "${ENV_FILE}" ]]; then
+  log "Loading env from: ${ENV_FILE}"
   set -a
-  # shellcheck disable=SC1090
-  source "${ENV_FILE}"
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line#"${line%%[![:space:]]*}"}"
+    line="${line%"${line##*[![:space:]]}"}"
+    [[ -z "$line" || "${line:0:1}" == "#" ]] && continue
+    if [[ "$line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
+      export "$line"
+    else
+      warn "Skipping invalid .env line: $line"
+    fi
+  done < "${ENV_FILE}"
   set +a
 fi
 
@@ -105,14 +110,14 @@ if [[ "${RUN_ORCHESTRATOR}" == "1" ]]; then
       ;;
     cosmos)
       if command -v docker >/dev/null 2>&1; then
-        log "Starting Cosmos (Airflow + astronomer-cosmos) (docker compose)"
+        log "Starting Cosmos (docker compose)"
         docker compose -f "${WORKSPACE_ROOT}/orchestration/cosmos/docker-compose.yml" up -d --build
       else
         warn "docker not available; cannot start Cosmos"
       fi
       ;;
     *)
-      warn "Unknown ORCHESTRATOR='${ORCHESTRATOR}' (expected: none|airflow|dagster|cosmos)"
+      warn "Unknown ORCHESTRATOR='${ORCHESTRATOR}'"
       ;;
   esac
 fi
@@ -127,13 +132,39 @@ fi
 if [[ "${RUN_DBT_DEPS}" == "1" ]]; then
   log "Running: dbt deps"
   (cd "${WORKSPACE_ROOT}" && dbt deps) || warn "dbt deps failed."
-else
-  log "Skipping dbt deps (RUN_DBT_DEPS=${RUN_DBT_DEPS})"
+fi
+
+if [[ "${RUN_DBT_PARSE}" == "1" ]]; then
+  case "${ADAPTER}" in
+    databricks)
+      if [[ -z "${DATABRICKS_HOST:-}" || -z "${DATABRICKS_HTTP_PATH:-}" || -z "${DATABRICKS_SCHEMA:-}" ]]; then
+        warn "Skipping dbt parse: Databricks env vars not configured yet."
+        RUN_DBT_PARSE=0
+      fi
+      if [[ "${DATABRICKS_CATALOG+x}" == "x" && -z "${DATABRICKS_CATALOG}" ]]; then
+        unset DATABRICKS_CATALOG
+        export DATABRICKS_CATALOG
+      fi
+      ;;
+    snowflake)
+      if [[ -z "${SNOWFLAKE_ACCOUNT:-}" || -z "${SNOWFLAKE_USER:-}" || -z "${SNOWFLAKE_WAREHOUSE:-}" || -z "${SNOWFLAKE_DATABASE:-}" || -z "${SNOWFLAKE_SCHEMA:-}" ]]; then
+        warn "Skipping dbt parse: Snowflake env vars not configured yet."
+        RUN_DBT_PARSE=0
+      fi
+      ;;
+    fabric)
+      if [[ -z "${FABRIC_SERVER:-}" || -z "${FABRIC_DATABASE:-}" || -z "${FABRIC_SCHEMA:-}" ]]; then
+        warn "Skipping dbt parse: Fabric env vars not configured yet."
+        RUN_DBT_PARSE=0
+      fi
+      ;;
+  esac
 fi
 
 if [[ "${RUN_DBT_PARSE}" == "1" ]]; then
   log "Running: dbt parse"
-  (cd "${WORKSPACE_ROOT}" && dbt parse --profile "${DBT_PROFILE}" --target "${DBT_TARGET}") || warn "dbt parse failed (credentials not configured yet)."
+  (cd "${WORKSPACE_ROOT}" && dbt parse --profile "${DBT_PROFILE}" --target "${DBT_TARGET}") \
+    || warn "dbt parse failed (credentials not configured yet)."
 else
   log "Skipping dbt parse (RUN_DBT_PARSE=${RUN_DBT_PARSE})"
 fi
@@ -142,5 +173,5 @@ log "Done."
 echo
 echo "Next:"
 echo "  1) Edit adapters/${ADAPTER}/.env"
-echo "  2) Run dbt debug --profile ${DBT_PROFILE} --target ${DBT_TARGET}"
-echo "  3) Run dbt build --profile ${DBT_PROFILE} --target ${DBT_TARGET}"
+echo "  2) Run: dbt debug --profile ${DBT_PROFILE} --target ${DBT_TARGET}"
+echo "  3) Run: dbt build --profile ${DBT_PROFILE} --target ${DBT_TARGET}"

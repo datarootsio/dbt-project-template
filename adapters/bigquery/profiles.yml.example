@@ -8,17 +8,12 @@ dbt_project_template:
       location: "{{ env_var('BQ_LOCATION', 'EU') }}"
       threads: "{{ env_var('DBT_THREADS', '4') | int }}"
 
-      # Method selector (no Jinja blocks allowed in profiles.yml)
-      # oauth | service-account | service-account-json
       method: "{{ env_var('BQ_METHOD', 'oauth') }}"
 
-      # For service-account: point to a JSON keyfile on disk (mounted/available in container)
       keyfile: "{{ env_var('BQ_KEYFILE', '') }}"
 
-      # For service-account-json: paste raw JSON or a minified JSON string
       keyfile_json: "{{ env_var('BQ_KEYFILE_JSON', '') }}"
 
-      # Optional tuning
       priority: "{{ env_var('BQ_PRIORITY', 'interactive') }}"
       retries: "{{ env_var('BQ_RETRIES', '1') | int }}"
       maximum_bytes_billed: "{{ env_var('BQ_MAX_BYTES_BILLED', '') }}"

@@ -10,13 +10,9 @@ dbt_project_template:
       user: "{{ env_var('PG_USER') }}"
       threads: "{{ env_var('DBT_THREADS', '4') | int }}"
 
-      # Auth method selector (no Jinja blocks allowed in profiles.yml)
-      # - password (default)
-      # - iam      (token passed via PG_PASSWORD)
       auth_method: "{{ env_var('PG_AUTH_METHOD', 'password') }}"
       password: "{{ env_var('PG_PASSWORD', '') }}"
 
-      # TLS options (optional)
       sslmode: "{{ env_var('PG_SSLMODE', 'prefer') }}"
       sslcert: "{{ env_var('PG_SSL_CERT', '') }}"
       sslkey: "{{ env_var('PG_SSL_KEY', '') }}"
