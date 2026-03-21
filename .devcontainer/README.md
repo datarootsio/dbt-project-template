@@ -1,22 +1,51 @@
-# Dev Containers (Option B: single template repo)
+# Dev Containers
 
-This repo supports **multiple adapters** via multiple devcontainer configs.
+This repository supports **multiple adapters** through separate Dev Container configurations.
 
-## How to choose an adapter in VS Code
-1. Open the repo in VS Code.
-2. Command Palette → **Dev Containers: Switch Container Configuration**
-3. Choose one of:
-   - `.devcontainer/devcontainer.snowflake.json`
-   - `.devcontainer/devcontainer.fabric.json`
-4. Command Palette → **Dev Containers: Reopen in Container**
+## How to Choose an Adapter in VS Code
 
-## What happens automatically
-On first container start, `.devcontainer/postCreate.sh` will:
-- Create `adapters/<adapter>/.env` from `env.example` (if missing)
-- Install `/profiles/profiles.yml` from the adapter pack (if present)
-- Auto-load the `.env` in your terminal (so dbt can read env vars)
-- Run `dbt deps` and `dbt parse` (can be disabled)
+1. Open the repository in **VS Code**.
+2. Open the **Command Palette**.
+3. Select **Dev Containers: Switch Container Configuration**.
+4. Choose one of the following:
+
+   * `.devcontainer/devcontainer.snowflake.json`
+   * `.devcontainer/devcontainer.fabric.json`
+5. Run **Dev Containers: Reopen in Container**.
+
+## What Happens Automatically
+
+On the first container start, `.devcontainer/postCreate.sh` will:
+
+* Create `adapters/<adapter>/.env` from `env.example` (if it does not already exist).
+* Install `/profiles/profiles.yml` from the adapter pack (if present).
+* Automatically load the `.env` file in your terminal so **dbt can read environment variables**.
+* Run `dbt deps` and `dbt parse` (this behavior can be disabled if needed).
 
 ## Notes
-- Edit `adapters/<adapter>/.env` for real credentials when you want to run `dbt build/test`.
-- CI/Prod should inject secrets from a secret store, not commit `.env`.
+
+* Edit `adapters/<adapter>/.env` to add real credentials when you want to run `dbt build` or `dbt test`.
+* In **CI/production environments**, secrets should be injected from a **secret store**, not committed in `.env` files.
+
+## Selecting an Orchestrator
+
+To switch the active orchestrator, edit the `containerEnv` section in:
+
+```
+.devcontainer/devcontainer.json
+```
+
+Example:
+
+```json
+"containerEnv": {
+  "ORCHESTRATOR": "airflow"  // Options: "airflow", "dagster"
+}
+```
+
+### Rebuild Required
+
+After changing this value:
+
+1. Open the **Command Palette** (`Ctrl/Cmd + Shift + P`).
+2. Select **Dev Containers: Rebuild Container**.

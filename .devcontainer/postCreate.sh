@@ -88,40 +88,6 @@ if [[ -f "${ENV_FILE}" ]]; then
   set +a
 fi
 
-if [[ "${RUN_ORCHESTRATOR}" == "1" ]]; then
-  case "${ORCHESTRATOR}" in
-    none|"")
-      ;;
-    airflow)
-      if command -v docker >/dev/null 2>&1; then
-        log "Starting Airflow (docker compose)"
-        docker compose -f "${WORKSPACE_ROOT}/orchestration/airflow/docker-compose.yml" up -d
-      else
-        warn "docker not available; cannot start Airflow"
-      fi
-      ;;
-    dagster)
-      if command -v docker >/dev/null 2>&1; then
-        log "Starting Dagster (docker compose)"
-        docker compose -f "${WORKSPACE_ROOT}/orchestration/dagster/docker-compose.yml" up -d
-      else
-        warn "docker not available; cannot start Dagster"
-      fi
-      ;;
-    cosmos)
-      if command -v docker >/dev/null 2>&1; then
-        log "Starting Cosmos (docker compose)"
-        docker compose -f "${WORKSPACE_ROOT}/orchestration/cosmos/docker-compose.yml" up -d --build
-      else
-        warn "docker not available; cannot start Cosmos"
-      fi
-      ;;
-    *)
-      warn "Unknown ORCHESTRATOR='${ORCHESTRATOR}'"
-      ;;
-  esac
-fi
-
 log "dbt version:"
 if command -v dbt >/dev/null 2>&1; then
   dbt --version || true
@@ -167,6 +133,76 @@ if [[ "${RUN_DBT_PARSE}" == "1" ]]; then
     || warn "dbt parse failed (credentials not configured yet)."
 else
   log "Skipping dbt parse (RUN_DBT_PARSE=${RUN_DBT_PARSE})"
+fi
+
+if [[ "${RUN_ORCHESTRATOR}" == "1" ]]; then
+  case "${ORCHESTRATOR}" in
+    none|"")
+      log "No orchestrator selected. Skipping orchestration setup."
+      ;;
+    dagster)
+      log "Installing Dagster dependencies..."
+      
+      python3 -m pip install --user --break-system-packages --upgrade pip > /dev/null 2>&1
+      python3 -m pip cache purge || true
+      python3 -m pip install --user --break-system-packages --no-cache-dir --default-timeout=100 dagster dagster-webserver dagster-dbt pyyaml
+      
+      export PATH="$HOME/.local/bin:$PATH"
+      echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+      
+      log "Starting Dagster UI on port 3000..."
+      export DAGSTER_HOME="${WORKSPACE_ROOT}/.dagster"
+      echo "export DAGSTER_HOME=\"${DAGSTER_HOME}\"" >> ~/.bashrc
+      mkdir -p "$DAGSTER_HOME"
+      
+      nohup dagster dev -f "${WORKSPACE_ROOT}/orchestration/dagster/definitions.py" -h 0.0.0.0 -p 3000 > /tmp/dagster.log 2>&1 &
+      disown
+      
+      log "Dagster started successfully! UI will be available on port 3000."
+      ;;
+    airflow|cosmos)
+      log "Installing Apache Airflow (Stable SQLite Mode)..."
+      
+      AIRFLOW_VERSION="2.10.5"
+      PYTHON_VERSION="$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
+      CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
+      
+      rm -rf ~/.airflow_venv ~/airflow
+      python3 -m venv ~/.airflow_venv
+      
+      ~/.airflow_venv/bin/pip install --upgrade pip > /dev/null 2>&1
+      ~/.airflow_venv/bin/pip install --no-cache-dir --default-timeout=100 \
+        "apache-airflow==${AIRFLOW_VERSION}" astronomer-cosmos python-dotenv pyyaml \
+        --constraint "${CONSTRAINT_URL}"
+      
+      ~/.airflow_venv/bin/pip install "werkzeug==2.2.3"
+      
+      export PATH="$HOME/.airflow_venv/bin:$PATH"
+      echo 'export PATH="$HOME/.airflow_venv/bin:$PATH"' >> ~/.bashrc
+      
+      export AIRFLOW_HOME="$HOME/airflow"
+      export AIRFLOW__CORE__DAGS_FOLDER="${WORKSPACE_ROOT}/orchestration/airflow/dags"
+      export AIRFLOW__CORE__LOAD_EXAMPLES="False"
+      
+      echo "export AIRFLOW_HOME=\"$HOME/airflow\"" >> ~/.bashrc
+      
+      log "Initializing Airflow Database..."
+      airflow db migrate > /dev/null 2>&1 || true
+      
+      log "Creating Airflow Admin user..."
+      airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true
+      
+      log "Starting Airflow Services..."
+      nohup airflow webserver -p 8080 > /tmp/airflow_webserver.log 2>&1 &
+      nohup airflow scheduler > /tmp/airflow_scheduler.log 2>&1 &
+      disown -a
+      
+      log "Airflow started! UI available on port 8080 (admin/admin)."
+      ;;
+    *)
+      warn "Unknown or unsupported ORCHESTRATOR='${ORCHESTRATOR}' in native mode."
+      ;;
+  esac
 fi
 
 log "Done."

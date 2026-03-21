@@ -6,3 +6,5 @@ package-lock.yml
 
 # local secrets
 adapters/*/.env
+.dagster/
+/.tmp_dagster*

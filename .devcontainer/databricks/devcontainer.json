@@ -3,15 +3,26 @@
   "image": "ghcr.io/datarootsio/dbt-runtime-databricks:1.8.0",
   "remoteUser": "dbtuser",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "forwardPorts": [3000, 8080],
+  "portsAttributes": {
+    "3000": {
+      "label": "Dagster UI",
+      "onAutoForward": "notify"
+    },
+    "8080": {
+      "label": "Airflow UI",
+      "onAutoForward": "notify"
+    }
+  },
   "containerEnv": {
     "ADAPTER": "databricks",
     "DBT_TARGET": "dev",
     "DBT_PROFILES_DIR": "/profiles",
-    "RUN_DBT_DEPS": "1",
-    "RUN_DBT_PARSE": "1",
     "DBT_PROFILE": "dbt_project_template",
-    "DBT_PROJECT_DIR": "/workspaces/${localWorkspaceFolderBasename}",
-    "ORCHESTRATOR": "none"
+    "WORKSPACE_ROOT": "/workspaces/${localWorkspaceFolderBasename}",
+    "ORCHESTRATOR": "dagster",
+    "RUN_DBT_DEPS": "1",
+    "RUN_DBT_PARSE": "1"
   },
   "postCreateCommand": "bash .devcontainer/postCreate.sh",
   "customizations": {

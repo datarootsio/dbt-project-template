@@ -3,6 +3,17 @@
   "image": "ghcr.io/datarootsio/dbt-runtime-postgres:1.8.0",
   "remoteUser": "dbtuser",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "forwardPorts": [3000, 8080],
+  "portsAttributes": {
+    "3000": {
+      "label": "Dagster UI",
+      "onAutoForward": "notify"
+    },
+    "8080": {
+      "label": "Airflow UI",
+      "onAutoForward": "notify"
+    }
+  },
   "containerEnv": {
     "ADAPTER": "postgres",
     "DBT_TARGET": "dev",
@@ -11,7 +22,8 @@
     "RUN_DBT_PARSE": "1",
     "DBT_PROFILE": "dbt_project_template",
     "DBT_PROJECT_DIR": "/workspaces/${localWorkspaceFolderBasename}",
-    "ORCHESTRATOR": "none"
+    
+    "ORCHESTRATOR": "airflow"
   },
   "postCreateCommand": "bash .devcontainer/postCreate.sh",
   "customizations": {

@@ -1,5 +1,16 @@
 selectors:
-  - name: daily
+  - name: finance
+    description: "All finance and accounting models"
     definition:
-      method: tag
-      value: daily
+      union:
+        - tag: finance
+        - tag: accounting
+
+  - name: marketing
+    description: "Marketing models excluding experiments"
+    definition:
+      intersection:
+        - method: path
+          value: models/marketing
+        - exclude:
+            - tag: experimental
