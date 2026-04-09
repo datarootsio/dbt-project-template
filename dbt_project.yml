@@ -22,7 +22,8 @@ clean-targets:         # directories to be removed by `dbt clean`
   - "target"
   - "dbt_packages"
 
-
+on-run-end:
+  - "{{ dbt_artifacts.upload_results(results) }}"
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 
@@ -34,3 +35,11 @@ models:
     # Config indicated by + and applies to all files under models/example/
     example:
       +materialized: view
+
+    dbt_artifacts:
+      +schema: dbt_artifacts
+      +materialized: table
+      sources:
+        +materialized: incremental
+      staging:
+        +materialized: view
