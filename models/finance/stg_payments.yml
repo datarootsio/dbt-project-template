@@ -1,0 +1,10 @@
+version: 2
+models:
+  - name: stg_payments
+    columns:
+      - name: payment_id
+        data_type: INT64
+      - name: amount
+        data_type: FLOAT64
+      - name: status
+        data_type: STRING
