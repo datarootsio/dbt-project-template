@@ -1,10 +1,19 @@
 version: 2
 models:
   - name: stg_invoices
+    description: "Staging model for invoices — covers PK, timestamp (_at + _date) and amount (_amount) use cases."
     columns:
       - name: invoice_id
         data_type: INT64
+        description: "Primary key — expects unique + not_null."
       - name: invoice_number
         data_type: STRING
       - name: issued_at
         data_type: TIMESTAMP
+        description: "Issue timestamp — expects not_null (_at suffix)."
+      - name: invoice_amount
+        data_type: FLOAT64
+        description: "Invoice total — expects expression_is_true >= 0 (_amount suffix)."
+      - name: due_date
+        data_type: DATE
+        description: "Payment due date — expects not_null (_date suffix)."

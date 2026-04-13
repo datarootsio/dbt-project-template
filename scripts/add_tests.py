@@ -1,0 +1,203 @@
+import json
+from pathlib import Path
+from ruamel.yaml import YAML
+
+yaml = YAML()
+yaml.preserve_quotes = True
+yaml.indent(mapping=2, sequence=4, offset=2)
+
+MANIFEST_PATH = "target/manifest.json"
+MODEL_PREFIXES = ["stg_", "dim_", "fct_", "int_", "mart_"]
+
+# ─── Helpers ────────────────────────────────────────────────────────────────
+
+def load_manifest() -> dict:
+    with open(MANIFEST_PATH) as f:
+        return json.load(f)
+
+def get_all_model_names(manifest: dict) -> set:
+    return {
+        node["name"]
+        for node in manifest["nodes"].values()
+        if node["resource_type"] == "model"
+    }
+
+def infer_ref_model(fk_column: str, all_models: set) -> str | None:
+    """
+    Infer the referenced model from a foreign key column name.
+    e.g. customer_id → looks for dim_customers, stg_customers, int_customers...
+    Returns the first matching model name or None.
+    """
+    entity = fk_column.removesuffix("_id")  # customer_id → customer
+    for prefix in ["dim_", "stg_", "int_"]:
+        candidate = f"{prefix}{entity}s"    # dim_customers
+        if candidate in all_models:
+            return candidate
+        candidate = f"{prefix}{entity}"     # dim_customer
+        if candidate in all_models:
+            return candidate
+    return None
+
+def existing_test_names(col_entry: dict) -> set:
+    result = set()
+    for t in col_entry.get("data_tests", []):
+        if isinstance(t, str):
+            result.add(t)
+        elif isinstance(t, dict):
+            result.add(list(t.keys())[0])
+    return result
+
+# ─── Test generation rules ───────────────────────────────────────────────────
+
+def get_tests_for_column(
+    col_name: str,
+    col_type: str,
+    model_name: str,
+    all_columns: list[str],
+    all_models: set,
+) -> list:
+    tests = []
+    col_lower = col_name.lower()
+
+    # ── PK: unique + not_null ────────────────────────────────────────────────
+    is_pk = (
+        col_lower.endswith("_id")
+        and any(model_name.startswith(p) for p in ["stg_", "dim_", "int_"])
+    )
+    if is_pk:
+        tests += ["unique", "not_null"]
+        return tests  # PK columns are never FK — stop here
+
+    # ── FK: not_null + relationships ─────────────────────────────────────────
+    is_fk = (
+        col_lower.endswith("_id")
+        and model_name.startswith("fct_")
+    )
+    if is_fk:
+        tests.append("not_null")
+        ref_model = infer_ref_model(col_lower, all_models)
+        if ref_model:
+            tests.append({
+                "relationships": {
+                    "to": f"ref('{ref_model}')",
+                    "field": col_lower,
+                }
+            })
+
+    # ── Timestamps: not_null ─────────────────────────────────────────────────
+    if col_lower.endswith("_at") or col_lower.endswith("_date"):
+        if "not_null" not in tests:
+            tests.append("not_null")
+
+    # ── Amounts / prices: must be >= 0 ───────────────────────────────────────
+    if any(col_lower.endswith(s) for s in ["_amount", "_price", "_cost", "_revenue", "_fee"]):
+        tests.append({
+            "dbt_utils.expression_is_true": {
+                "expression": f"{col_name} >= 0"
+            }
+        })
+
+    # ── Percentages / ratios: must be between 0 and 1 ────────────────────────
+    if any(col_lower.endswith(s) for s in ["_rate", "_ratio", "_pct", "_percent"]):
+        tests.append({
+            "dbt_expectations.expect_column_values_to_be_between": {
+                "min_value": 0,
+                "max_value": 1,
+            }
+        })
+
+    # ── Date ranges: start_date must be <= end_date ───────────────────────────
+    # Test is generated on the start column only to avoid duplicates
+    if col_lower in ("start_date", "started_at", "valid_from"):
+        end_candidates = ["end_date", "ended_at", "valid_to"]
+        matching_end = next((c for c in all_columns if c in end_candidates), None)
+        if matching_end:
+            tests.append({
+                "dbt_utils.expression_is_true": {
+                    "expression": f"{col_name} <= {matching_end}"
+                }
+            })
+
+    return tests
+
+# ─── Main ────────────────────────────────────────────────────────────────────
+
+def main():
+    manifest = load_manifest()
+    all_models = get_all_model_names(manifest)
+
+    for node_id, node in manifest["nodes"].items():
+        if node["resource_type"] != "model":
+            continue
+
+        model_name = node["name"]
+
+        # NOTE: original_file_path points to the .sql file.
+        # To find the co-located YAML, derive the path from patch_path instead:
+        #
+        #   patch_path = node.get("patch_path") or ""
+        #   if not patch_path:
+        #       print(f"⚠️  No schema YAML for {model_name} — run dbt-osmosis first.")
+        #       continue
+        #   yaml_path = Path(patch_path.split("://", 1)[-1])
+        #
+        # Using original_file_path with .sql replaced works for co-located YAMLs:
+        yaml_path = Path(node["original_file_path"]).with_suffix(".yml")
+
+        if not yaml_path.exists():
+            print(f"⚠️  YAML not found: {yaml_path}")
+            continue
+
+        with open(yaml_path) as f:
+            schema = yaml.load(f)
+
+        if not schema or "models" not in schema:
+            continue
+
+        model_entry = next(
+            (m for m in schema["models"] if m["name"] == model_name), None
+        )
+        if not model_entry:
+            continue
+
+        # Collect all column names for cross-column rules (e.g. start/end date)
+        all_col_names = [c.lower() for c in node["columns"].keys()]
+
+        modified = False
+
+        for col_name, col_info in node["columns"].items():
+            col_type = col_info.get("data_type", "")
+            new_tests = get_tests_for_column(
+                col_name, col_type, model_name, all_col_names, all_models
+            )
+            if not new_tests:
+                continue
+
+            # Find or create the column entry in the YAML
+            col_entry = next(
+                (c for c in model_entry.get("columns", []) if c["name"] == col_name),
+                None,
+            )
+            if not col_entry:
+                col_entry = {"name": col_name}
+                model_entry.setdefault("columns", []).append(col_entry)
+
+            existing = existing_test_names(col_entry)
+
+            # Only add tests that are not already present — non-destructive
+            for test in new_tests:
+                test_name = test if isinstance(test, str) else list(test.keys())[0]
+                if test_name not in existing:
+                    col_entry.setdefault("data_tests", []).append(test)
+                    existing.add(test_name)
+                    modified = True
+
+        if modified:
+            with open(yaml_path, "w") as f:
+                yaml.dump(schema, f)
+            print(f"✅ {model_name} — tests updated")
+        else:
+            print(f"⏭️  {model_name} — nothing to add")
+
+if __name__ == "__main__":
+    main()
