@@ -6,7 +6,7 @@ name: 'dbt_project_template'
 version: '1.0.0'
 
 # This setting configures which "profile" dbt uses for this project.
-profile: 'default'
+profile: 'dbt_project_template'
 
 # These configurations specify where dbt should look for different types of files.
 # The `model-paths` config, for example, states that models in this project can be
@@ -32,6 +32,7 @@ on-run-end:
 # files using the `{{ config(...) }}` macro.
 models:
   dbt_project_template:
+    +dbt-osmosis: "{model}.yml"
     # Config indicated by + and applies to all files under models/example/
     example:
       +materialized: view
