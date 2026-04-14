@@ -1,28 +1,37 @@
 version: 2
 models:
   - name: fct_orders
-    description: >
-      Fact table for orders.
-      Covers: FK with resolved ref to dim_ (customer_id → dim_customers),
-      FK with resolved ref to stg_ (campaign_id → stg_campaigns),
-      FK with no resolvable ref (product_id → no matching model),
-      timestamp (_at), amount (_amount), and rate (_rate).
     columns:
       - name: customer_id
         data_type: INT64
-        description: "FK to dim_customers — expects not_null + relationships(ref('dim_customers'), field='customer_id')."
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_id
       - name: campaign_id
         data_type: INT64
-        description: "FK to stg_campaigns — expects not_null + relationships(ref('stg_campaigns'), field='campaign_id')."
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_campaigns')
+              field: campaign_id
       - name: product_id
         data_type: INT64
-        description: "FK with no matching model found — expects only not_null (no relationships test)."
+        data_tests:
+          - not_null
       - name: ordered_at
         data_type: TIMESTAMP
-        description: "Order timestamp — expects not_null (_at suffix)."
+        data_tests:
+          - not_null
       - name: total_amount
         data_type: FLOAT64
-        description: "Order total — expects expression_is_true >= 0 (_amount suffix)."
+        data_tests:
+          - dbt_utils.expression_is_true:
+              expression: ' >= 0'
       - name: tax_rate
         data_type: FLOAT64
-        description: "Tax rate (0–1) — expects expect_column_values_to_be_between 0 and 1 (_rate suffix)."
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 1

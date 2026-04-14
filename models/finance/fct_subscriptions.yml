@@ -1,30 +1,42 @@
 version: 2
 models:
   - name: fct_subscriptions
-    description: >
-      Fact table for subscriptions.
-      Covers: FK (customer_id → dim_customers), fee amount (_fee),
-      ratio (_ratio), percent (_percent), timestamp (_at),
-      and date-range pair (start_date / end_date).
     columns:
       - name: customer_id
         data_type: INT64
-        description: "FK to dim_customers — expects not_null + relationships."
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_id
       - name: monthly_fee
         data_type: FLOAT64
-        description: "Monthly subscription fee — expects expression_is_true >= 0 (_fee suffix)."
+        data_tests:
+          - dbt_utils.expression_is_true:
+              expression: ' >= 0'
       - name: churn_ratio
         data_type: FLOAT64
-        description: "Churn ratio (0–1) — expects expect_column_values_to_be_between 0 and 1 (_ratio suffix)."
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 1
       - name: upsell_percent
         data_type: FLOAT64
-        description: "Upsell percentage (0–1) — expects expect_column_values_to_be_between 0 and 1 (_percent suffix)."
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 1
       - name: subscribed_at
         data_type: TIMESTAMP
-        description: "Subscription start timestamp — expects not_null (_at suffix). Not a date-range trigger (column name does not match start_date/started_at/valid_from)."
+        data_tests:
+          - not_null
       - name: start_date
         data_type: DATE
-        description: "Subscription start date — expects expression_is_true start_date <= end_date (date-range pair)."
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ' <= end_date'
       - name: end_date
         data_type: DATE
-        description: "Subscription end date — paired with start_date for date-range test."
+        data_tests:
+          - not_null

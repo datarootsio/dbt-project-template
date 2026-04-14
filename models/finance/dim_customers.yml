@@ -1,29 +1,32 @@
 version: 2
 models:
   - name: dim_customers
-    description: >
-      Dimension table for customers.
-      Covers: PK in dim_ (customer_id), revenue/cost amounts, timestamp,
-      and date-range pair (valid_from / valid_to).
     columns:
       - name: customer_id
         data_type: INT64
-        description: "Primary key — expects unique + not_null (dim_ + _id)."
+        data_tests:
+          - unique
+          - not_null
       - name: email
         data_type: STRING
-        description: "Customer email — no automated test expected."
       - name: lifetime_revenue
         data_type: FLOAT64
-        description: "Cumulative revenue — expects expression_is_true >= 0 (_revenue suffix)."
+        data_tests:
+          - dbt_utils.expression_is_true:
+              expression: ' >= 0'
       - name: acquisition_cost
         data_type: FLOAT64
-        description: "Acquisition cost — expects expression_is_true >= 0 (_cost suffix)."
+        data_tests:
+          - dbt_utils.expression_is_true:
+              expression: ' >= 0'
       - name: created_at
         data_type: TIMESTAMP
-        description: "Row creation timestamp — expects not_null (_at suffix)."
+        data_tests:
+          - not_null
       - name: valid_from
         data_type: DATE
-        description: "SCD validity start — expects expression_is_true valid_from <= valid_to."
+        data_tests:
+          - dbt_utils.expression_is_true:
+              expression: ' <= valid_to'
       - name: valid_to
         data_type: DATE
-        description: "SCD validity end — paired with valid_from for date-range test."
