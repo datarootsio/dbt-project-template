@@ -1,19 +1,24 @@
 version: 2
 models:
   - name: int_order_items
-    description: >
-      Intermediate model for order line items.
-      Covers: PK in int_ (order_item_id), price amount, pct ratio, timestamp.
     columns:
       - name: order_item_id
         data_type: INT64
-        description: "Primary key — expects unique + not_null (int_ + _id)."
+        data_tests:
+          - unique
+          - not_null
       - name: unit_price
         data_type: FLOAT64
-        description: "Unit price — expects expression_is_true >= 0 (_price suffix)."
+        data_tests:
+          - dbt_utils.expression_is_true:
+              expression: ' >= 0'
       - name: discount_pct
         data_type: FLOAT64
-        description: "Discount percentage (0–1) — expects expect_column_values_to_be_between 0 and 1 (_pct suffix)."
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 1
       - name: created_at
         data_type: TIMESTAMP
-        description: "Row creation timestamp — expects not_null (_at suffix)."
+        data_tests:
+          - not_null
