@@ -113,7 +113,7 @@ def get_tests_for_column(
     if any(col_lower.endswith(s) for s in ["_amount", "_price", "_cost", "_revenue", "_fee"]):
         tests.append({
             "dbt_utils.expression_is_true": {
-                "expression": f"{col_name} >= 0"
+                "expression": """ >= 0"""
             }
         })
 
@@ -134,7 +134,7 @@ def get_tests_for_column(
         if matching_end:
             tests.append({
                 "dbt_utils.expression_is_true": {
-                    "expression": f"{col_name} <= {matching_end}"
+                    "expression": f""" <= {matching_end}"""
                 }
             })
 
