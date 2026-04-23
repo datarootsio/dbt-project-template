@@ -3,4 +3,4 @@
 select 
     1 as invoice_id,
     'INV-001' as invoice_number,
-    CURRENT_DATE as issued_at
+    {{ dbt.current_timestamp()}} as issued_at

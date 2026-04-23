@@ -24,7 +24,7 @@
     "RUN_DBT_DEPS": "1",
     "RUN_DBT_PARSE": "1"
   },
-  "postCreateCommand": "bash .devcontainer/postCreate.sh",
+  "postCreateCommand": "bash .devcontainer/postCreate.sh && python3 -c \"import urllib.request; urllib.request.urlretrieve('https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-arm.tar.gz', '/tmp/google-cloud-cli.tar.gz')\" && tar -xf /tmp/google-cloud-cli.tar.gz -C ~/ && ~/google-cloud-sdk/install.sh --quiet && echo 'export PATH=\"$HOME/google-cloud-sdk/bin:$PATH\"' >> ~/.bashrc",
   "customizations": {
     "vscode": {
       "extensions": [
