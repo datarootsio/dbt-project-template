@@ -1,0 +1,44 @@
+version: 2
+models:
+  - name: stg_top_terms_hourly
+    config:
+      elementary:
+        timestamp_column: refresh_time
+    data_tests:
+      - elementary.freshness_anomalies:
+          config:
+            tags: ["elementary"]
+          anomaly_direction: spike
+    columns:
+      - name: dma_name
+        data_type: STRING
+      - name: dma_id
+        data_type: INT64
+      - name: term
+        data_type: STRING
+      - name: week
+        data_type: DATE
+      - name: score
+        data_type: INT64
+        data_tests:
+          - elementary.column_anomalies:
+              config:
+                tags: ["elementary"]
+              column_anomalies:
+                - average
+                - null_count
+              anomaly_direction: both
+      - name: rank
+        data_type: INT64
+        data_tests:
+          - elementary.column_anomalies:
+              config:
+                tags: ["elementary"]
+              column_anomalies:
+                - average
+                - null_count
+                - min
+                - max
+              anomaly_direction: both
+      - name: refresh_time
+        data_type: DATETIME

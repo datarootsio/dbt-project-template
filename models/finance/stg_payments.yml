@@ -1,6 +1,18 @@
 version: 2
 models:
   - name: stg_payments
+    config:
+      elementary:
+        timestamp_column: paid_at
+    data_tests:
+      - elementary.freshness_anomalies:
+          config:
+            tags: ["elementary"]
+            severity: warn
+      - elementary.all_columns_anomalies:
+          config:
+            tags: ["elementary"]
+
     columns:
       - name: payment_id
         data_type: INT64

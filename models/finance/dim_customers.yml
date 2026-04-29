@@ -1,6 +1,19 @@
 version: 2
 models:
   - name: dim_customers
+    config:
+      contract:
+        enforced: true
+      elementary:
+        timestamp_column: created_at
+    data_tests:
+      - elementary.freshness_anomalies:
+          config:
+            tags: ["elementary"]
+      - elementary.all_columns_anomalies:
+          config:
+            tags: ["elementary"]
+            
     columns:
       - name: customer_id
         data_type: INT64

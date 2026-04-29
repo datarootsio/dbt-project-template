@@ -1,0 +1,30 @@
+version: 2
+models:
+  - name: stg_top_rising_terms_hourly
+    config:
+      elementary:
+        timestamp_column: refresh_time
+    data_tests:
+      - elementary.freshness_anomalies:
+          config:
+            tags: ["elementary"]
+      - elementary.all_columns_anomalies:
+          config:
+            tags: ["elementary"]
+    columns:
+      - name: week
+        data_type: DATE
+      - name: score
+        data_type: INT64
+      - name: rank
+        data_type: INT64
+      - name: percent_gain
+        data_type: INT64
+      - name: refresh_time
+        data_type: DATETIME
+      - name: dma_name
+        data_type: STRING
+      - name: dma_id
+        data_type: INT64
+      - name: term
+        data_type: STRING

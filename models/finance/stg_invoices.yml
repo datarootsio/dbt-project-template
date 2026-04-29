@@ -1,6 +1,17 @@
 version: 2
 models:
   - name: stg_invoices
+    config:
+      elementary:
+        timestamp_column: issued_at
+    data_tests:
+      - elementary.freshness_anomalies:
+          config:
+            tags: ["elementary"]
+      - elementary.all_columns_anomalies:
+          config:
+            tags: ["elementary"]
+
     columns:
       - name: invoice_id
         data_type: INT64

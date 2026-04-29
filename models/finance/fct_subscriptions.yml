@@ -1,6 +1,17 @@
 version: 2
 models:
   - name: fct_subscriptions
+    config:
+      elementary:
+        timestamp_column: subscribed_at
+    data_tests:
+      - elementary.freshness_anomalies:
+          config:
+            tags: ["elementary"]
+      - elementary.all_columns_anomalies:
+          config:
+            tags: ["elementary"]
+
     columns:
       - name: customer_id
         data_type: INT64
