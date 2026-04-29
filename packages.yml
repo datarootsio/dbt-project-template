@@ -10,3 +10,6 @@ packages:
 
   - git: "https://github.com/brooklyn-data/dbt_artifacts.git"
     revision: 4efc6e00995ac6860597662a511b26b1e3dad675
+    
+  - package: elementary-data/elementary
+    version: 0.23.0
