@@ -43,6 +43,9 @@ models:
     example:
       +materialized: view
 
+    python:
+      +enabled: "{{ env_var('DBT_PYTHON_SUPPORTED', 'false') == 'true' }}"
+
   elementary:
     +enabled: false
     +schema: elementary

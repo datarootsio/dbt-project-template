@@ -72,6 +72,12 @@ export ADAPTER DBT_TARGET DBT_PROFILE DBT_PROFILES_DIR
 export DBT_ADAPTER="${ADAPTER}"
 export DBT_PROJECT_DIR="${WORKSPACE_ROOT}"
 
+if [[ "$ADAPTER" == "snowflake" || "$ADAPTER" == "databricks" || "$ADAPTER" == "bigquery" ]]; then
+  export DBT_PYTHON_SUPPORTED=true
+else
+  export DBT_PYTHON_SUPPORTED=false
+fi
+
 if [[ -f "${ENV_FILE}" ]]; then
   log "Loading env from: ${ENV_FILE}"
   set -a
