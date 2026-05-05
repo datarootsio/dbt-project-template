@@ -77,6 +77,7 @@ if [[ "$ADAPTER" == "snowflake" || "$ADAPTER" == "databricks" || "$ADAPTER" == "
 else
   export DBT_PYTHON_SUPPORTED=false
 fi
+echo "export DBT_PYTHON_SUPPORTED=${DBT_PYTHON_SUPPORTED}" >> ~/.bashrc
 
 if [[ -f "${ENV_FILE}" ]]; then
   log "Loading env from: ${ENV_FILE}"
