@@ -24,7 +24,7 @@
     "RUN_DBT_DEPS": "1",
     "RUN_DBT_PARSE": "1"
   },
-  "postCreateCommand": "bash .devcontainer/postCreate.sh",
+  "postCreateCommand": "pip install azure-cli && bash .devcontainer/postCreate.sh",
   "customizations": {
     "vscode": {
       "settings": {
