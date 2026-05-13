@@ -9,10 +9,10 @@ sources:
     tables:
       - name: top_rising_terms_hourly
         description: >
-          Contient les termes de recherche Google en forte hausse, 
-          agrégés par heure.
+          Contains Google search terms that are trending sharply, 
+          aggregated by the hour.
 
       - name: top_terms_hourly
         description: >
-          Contient les termes de recherche Google les plus populaires,
-          agrégés par heure.
+          Contains the most popular Google search terms,
+          aggregated by the hour.
