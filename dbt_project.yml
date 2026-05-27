@@ -24,6 +24,12 @@ clean-targets:         # directories to be removed by `dbt clean`
 
 vars:
   upload_artifacts: false
+  schema_only_build: false
+  enable_limiting: 'no_limit'
+  dates:
+    start: '2024-01-01'      
+
+  default_buffer: ['day', -1]  # datepart, interval
 
 on-run-end:
   - "{% if var('upload_artifacts') %}{{ dbt_artifacts.upload_results(results) }}{% endif %}"
@@ -37,7 +43,7 @@ on-run-end:
 models:
   dbt_project_template:
     bigquery:
-      +enabled: false
+      +enabled: true
     +dbt-osmosis: "{model}.yml"
     # Config indicated by + and applies to all files under models/example/
     example:
