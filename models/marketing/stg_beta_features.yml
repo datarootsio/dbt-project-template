@@ -1,0 +1,13 @@
+version: 2
+models:
+  - name: stg_beta_features
+    columns:
+      - name: feature_id
+        data_type: INT64
+        data_tests:
+          - unique
+          - not_null
+      - name: feature_name
+        data_type: STRING
+      - name: phase
+        data_type: STRING

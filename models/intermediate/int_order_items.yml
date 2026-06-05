@@ -1,0 +1,24 @@
+version: 2
+models:
+  - name: int_order_items
+    columns:
+      - name: order_item_id
+        data_type: INT64
+        data_tests:
+          - unique
+          - not_null
+      - name: unit_price
+        data_type: FLOAT64
+        data_tests:
+          - dbt_utils.expression_is_true:
+              expression: ' >= 0'
+      - name: discount_pct
+        data_type: FLOAT64
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 1
+      - name: created_at
+        data_type: TIMESTAMP
+        data_tests:
+          - not_null

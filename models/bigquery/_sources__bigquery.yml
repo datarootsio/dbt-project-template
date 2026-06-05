@@ -1,0 +1,18 @@
+version: 2
+
+sources:
+  - name: google_trends_hourly
+    database: bigquery-public-data
+    schema: google_trends_hourly
+    description: "Google Trends hourly public dataset from BigQuery"
+
+    tables:
+      - name: top_rising_terms_hourly
+        description: >
+          Contains Google search terms that are trending sharply, 
+          aggregated by the hour.
+
+      - name: top_terms_hourly
+        description: >
+          Contains the most popular Google search terms,
+          aggregated by the hour.

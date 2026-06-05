@@ -1,0 +1,48 @@
+version: 2
+models:
+  - name: fct_orders
+    config:
+      elementary:
+        timestamp_column: ordered_at
+    data_tests:
+      - elementary.freshness_anomalies:
+          config:
+            tags: ["elementary"]
+      - elementary.all_columns_anomalies:
+          config:
+            tags: ["elementary"]
+            
+    columns:
+      - name: customer_id
+        data_type: INT64
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_id
+      - name: campaign_id
+        data_type: INT64
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_campaigns')
+              field: campaign_id
+      - name: product_id
+        data_type: INT64
+        data_tests:
+          - not_null
+      - name: ordered_at
+        data_type: TIMESTAMP
+        data_tests:
+          - not_null
+      - name: total_amount
+        data_type: FLOAT64
+        data_tests:
+          - dbt_utils.expression_is_true:
+              expression: ' >= 0'
+      - name: tax_rate
+        data_type: FLOAT64
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 1

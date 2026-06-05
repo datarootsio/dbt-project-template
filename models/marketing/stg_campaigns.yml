@@ -1,0 +1,13 @@
+version: 2
+models:
+  - name: stg_campaigns
+    columns:
+      - name: campaign_id
+        data_type: INT64
+        data_tests:
+          - unique
+          - not_null
+      - name: campaign_name
+        data_type: STRING
+      - name: status
+        data_type: STRING

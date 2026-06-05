@@ -6,7 +6,7 @@ name: 'dbt_project_template'
 version: '1.0.0'
 
 # This setting configures which "profile" dbt uses for this project.
-profile: 'default'
+profile: 'dbt_project_template'
 
 # These configurations specify where dbt should look for different types of files.
 # The `model-paths` config, for example, states that models in this project can be
@@ -22,8 +22,18 @@ clean-targets:         # directories to be removed by `dbt clean`
   - "target"
   - "dbt_packages"
 
+vars:
+  upload_artifacts: false
+  schema_only_build: false
+  enable_limiting: 'no_limit'
+  dates:
+    start: '2024-01-01'      
+
+  default_buffer: ['day', -1]  # datepart, interval
+
 on-run-end:
-  - "{{ dbt_artifacts.upload_results(results) }}"
+  - "{% if var('upload_artifacts') %}{{ dbt_artifacts.upload_results(results) }}{% endif %}"
+
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 
@@ -32,14 +42,29 @@ on-run-end:
 # files using the `{{ config(...) }}` macro.
 models:
   dbt_project_template:
+    bigquery:
+      +enabled: true
+    +dbt-osmosis: "{model}.yml"
     # Config indicated by + and applies to all files under models/example/
     example:
       +materialized: view
 
-    dbt_artifacts:
-      +schema: dbt_artifacts
-      +materialized: table
-      sources:
-        +materialized: incremental
-      staging:
-        +materialized: view
+    python:
+      +enabled: "{{ env_var('DBT_PYTHON_SUPPORTED', 'false') == 'true' }}"
+
+  elementary:
+    +enabled: false
+    +schema: elementary
+
+  dbt_project_evaluator:
+    +enabled: false
+    +schema: dbt_project_evaluator
+
+  dbt_artifacts:
+    +enabled: false
+    +schema: dbt_artifacts
+    +materialized: table
+    sources:
+      +materialized: incremental
+    staging:
+      +materialized: view
